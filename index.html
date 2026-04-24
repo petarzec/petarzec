@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lens — Photography</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="bg-neutral-950 text-white antialiased">
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-40 bg-neutral-950/80 backdrop-blur-md border-b border-white/5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+            <a href="#"
+                class="text-sm font-medium tracking-[0.2em] uppercase text-white/90 hover:text-white transition-colors">
+                Lens
+            </a>
+            <nav class="flex gap-8 text-xs tracking-widest uppercase">
+                <a href="#gallery" class="text-white/50 hover:text-white transition-colors">Work</a>
+                <a href="#" class="text-white/50 hover:text-white transition-colors">About</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="pt-32 pb-16 px-6">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-4xl md:text-5xl font-light tracking-tight text-white/90 leading-snug">
+                Capturing moments<br />
+                <span class="text-white/30">in stillness.</span>
+            </h1>
+        </div>
+    </section>
+
+    <!-- Gallery -->
+    <section id="gallery" class="px-6 pb-24">
+        <div class="max-w-7xl mx-auto">
+            <div id="photo-grid" class="columns-2 md:columns-3 gap-4 space-y-4">
+                <!-- Photos injected here -->
+            </div>
+
+            <!-- Loading state -->
+            <div id="loading" class="flex justify-center py-16">
+                <div class="w-5 h-5 border border-white/20 rounded-full animate-spin border-t-white"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 px-6 py-8">
+        <div class="max-w-7xl mx-auto flex items-center justify-between text-xs text-white/30 tracking-wide">
+            <span>&copy; 2025 Lens</span>
+            <span>All rights reserved</span>
+        </div>
+    </footer>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <button onclick="closeLightbox()"
+            class="absolute top-6 right-6 text-white/60 hover:text-white transition-colors z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <button onclick="navigateLightbox(-1)"
+            class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors p-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+        </button>
+
+        <div class="max-w-[90vw] max-h-[85vh] flex items-center justify-center">
+            <img id="lightbox-img" src="" alt="" class="max-w-full max-h-[85vh] object-contain rounded-sm" />
+        </div>
+
+        <button onclick="navigateLightbox(1)"
+            class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors p-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+        </button>
+
+        <!-- Counter -->
+        <div id="lightbox-counter"
+            class="absolute bottom-6 left-1/2 -translate-x-1/2 text-xs tracking-widest text-white/30"></div>
+    </div>
+
+    <!-- Photo data (separate file) -->
+    <script src="photos.js"></script>
+
+    <!-- App logic -->
+    <script>
+        let currentIndex = 0;
+
+        function renderGallery() {
+            const grid = document.getElementById('photo-grid');
+            const loading = document.getElementById('loading');
+
+            if (!Array.isArray(photos)) return;
+
+            grid.innerHTML = '';
+
+            photos.forEach((photo, index) => {
+                const card = document.createElement('div');
+                card.className = 'photo-card break-inside-avoid rounded-sm overflow-hidden cursor-pointer group relative';
+                card.onclick = () => openLightbox(index);
+
+                // Shimmer placeholder
+                card.innerHTML = `
+          <div class="shimmer w-full aspect-[4/5]"></div>
+          <img src="${photo.url}" alt="${photo.caption || ''}" loading="lazy"
+            onload="this.previousElementSibling.style.display='none'"
+            onerror="this.previousElementSibling.style.background='#1a1a1a'; this.style.display='none';"
+            class="w-full aspect-[4/5] object-cover block" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+            <div class="absolute bottom-0 left-0 right-0 p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+              ${photo.caption ? `<p class="text-xs text-white/80 tracking-wide">${photo.caption}</p>` : ''}
+            </div>
+          </div>
+        `;
+
+                grid.appendChild(card);
+
+                // Staggered fade-in
+                setTimeout(() => card.classList.add('visible'), 100 + index * 60);
+            });
+
+            loading.style.display = 'none';
+        }
+
+        function openLightbox(index) {
+            currentIndex = index;
+            updateLightbox();
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function navigateLightbox(direction) {
+            if (!Array.isArray(photos)) return;
+            currentIndex = (currentIndex + direction + photos.length) % photos.length;
+            updateLightbox();
+        }
+
+        function updateLightbox() {
+            const img = document.getElementById('lightbox-img');
+            const counter = document.getElementById('lightbox-counter');
+            img.src = photos[currentIndex].url;
+            img.alt = photos[currentIndex].caption || '';
+            counter.textContent = `${currentIndex + 1} / ${photos.length}`;
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!document.getElementById('lightbox').classList.contains('active')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'ArrowRight') navigateLightbox(1);
+        });
+
+        // Close on backdrop click
+        document.getElementById('lightbox').addEventListener('click', (e) => {
+            if (e.target.id === 'lightbox') closeLightbox();
+        });
+
+        // Init
+        renderGallery();
+    </script>
+</body>
+
+</html>
